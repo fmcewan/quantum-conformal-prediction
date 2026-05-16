@@ -1,0 +1,21 @@
+repeats: 50
+n_validation_points: 10
+m_list:
+  start: 1
+  end: 10000
+  resolution: 10
+common_properties:
+  alpha: 0.1
+  calibration_data_size: 40
+  hardware: "aer"
+  model_name: density_model_prob_strong
+  M: 0
+algorithm_profiles:
+  - name: mnn
+    score_function: "mnn"
+  - name: 1nn
+    score_function: "1nn"
+  - name: knn
+    score_function: "knn"
+  # - name: hdr
+  #   score_function: "hdr"

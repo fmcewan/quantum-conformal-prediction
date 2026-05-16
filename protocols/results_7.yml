@@ -1,0 +1,10 @@
+common_properties:
+  calibration_data_size: 100
+  M: 100
+  job_id_file_name: aer_combined_normals_bad_M100.csv 
+  alpha: 0.1
+algorithm_profiles:
+  - name: combined_normals_bad
+    model_name: combined_normals_bad  
+    hardware: aer
+    score_function: knn

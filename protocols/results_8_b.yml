@@ -1,0 +1,29 @@
+common_properties:
+  alpha: 0.1
+  calibration_data_size: 1000
+  M: 1000
+algorithm_profiles:
+  - name: AQCP binary pdf
+    model_name: density_model_prob_weak
+    score_function: "binary_pdf"
+    hardware: "aer"
+
+  # - name: deterministic CP 
+  #   model_name: density_model_det_strong
+  #   score_function: "det"
+  #   hardware: "ibmq"
+
+  # - name: QCP, k=1
+  #   model_name: density_model_prob_strong 
+  #   score_function: "1nn"
+  #   hardware: "ibmq"
+
+  # - name: QCP, k=$\lceil M^{1/2} \rceil$
+  #   model_name: density_model_prob_strong
+  #   score_function: "knn"
+  #   hardware: "ibmq"
+  
+  # - name: AQCP
+  #   model_name: density_model_prob_strong
+  #   score_function: "hdr"
+  #   hardware: "ibmq"

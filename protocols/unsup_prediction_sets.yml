@@ -1,0 +1,22 @@
+common_properties:
+  M: 500
+  model_name: combined_normals_good
+algorithm_profiles:
+  - name: dis_aer
+    hardware: aer
+    score_function: dis
+  - name: mnn_aer
+    hardware: aer
+    score_function: mnn
+  - name: dis_ibmq
+    hardware: ibmq
+    score_function: dis
+  - name: mnn_ibmq
+    hardware: ibmq
+    score_function: mnn
+  - name: dis_ibmqM3
+    hardware: ibmqM3
+    score_function: dis
+  - name: mnn_ibmqM3
+    hardware: ibmqM3
+    score_function: mnn

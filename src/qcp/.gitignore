@@ -1,0 +1,6 @@
+/virtual_environments
+/data
+/.vscode
+/.ipynb_checkpoints
+*.pyc
+*.csv

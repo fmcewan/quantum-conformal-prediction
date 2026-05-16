@@ -1,0 +1,11 @@
+common_properties:
+  model_name: "heteroscedastic_good"
+  alpha: 0.05
+  calibration_data_size: 100
+  validation_data_size: 100
+  M: 500
+  repeats: 1
+algorithm_profiles:
+  - name: "aer_regression_knn"
+    hardware: "aer"
+    score_function: "knn"

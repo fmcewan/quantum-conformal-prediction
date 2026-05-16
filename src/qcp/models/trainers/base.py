@@ -1,0 +1,211 @@
+import matplotlib.pyplot as plt
+import yaml
+from distributions.dist_manager import create_distribution
+import torchquantum as tq
+from sklearn.metrics import confusion_matrix, accuracy_score
+
+import numpy as np
+import torch
+
+class BaseTrainer:
+    def __init__(self, config_file, save_path):
+
+        self.config = config_file
+        self.file_name = save_path
+        self.n_epochs = config_file['training']['epochs']
+        self.batch_size = config_file['training']['batch_size']
+        self.n_training_samples = config_file['training']['training_samples']
+        self.y_range = config_file['data']['y_range']
+        self.n_qubits = config_file['model']['wires']
+        self.n_layers = config_file['model']['layers'] 
+        self.learning_rate = config_file['training']['learning_rate']
+        self.dist = create_distribution(config_file['data'])
+        self.q_device = tq.QuantumDevice(self.n_qubits)
+
+    @classmethod
+    def create(cls, file_name, save_name):
+
+        from training.deterministic_trainer import DeterministicTrainer
+        from training.implicit_probabilistic_trainer import ImplicitProbabilisticTrainer
+        from training.regression_trainer import RegressionTrainer
+        from training.classification_trainer import ClassificationTrainer
+        
+        with open("configurations/trainers/" + file_name, 'r') as file:
+            config = yaml.safe_load(file)
+            subclass = config['training']['trainer']
+        if subclass == 'deterministic':
+            return DeterministicTrainer(config, save_name)
+        elif subclass == 'regression':
+            return RegressionTrainer(config, save_name)
+        elif subclass == 'implicit_probabilistic':
+            return ImplicitProbabilisticTrainer(config, save_name)
+        elif subclass == 'classification':
+            return ClassificationTrainer(config, save_name)
+        else:
+            raise ValueError(f"{subclass} is not supported. It must be deterministic, regression, implicit_probabilistic or classification.")
+
+    def train_one_epoch(self):
+        pass
+
+    def train(self, plot_loss=True):
+
+        losses = []
+        for epoch in range(self.n_epochs):
+            self.optimizer.zero_grad()
+            epoch_loss = self.train_one_epoch()
+            losses.append(epoch_loss)
+            print(f"Training Epoch: {epoch}/{self.n_epochs}", end='\r')
+
+        # Plotting the loss over epochs
+        if plot_loss:
+            plt.plot(range(self.n_epochs), losses)
+            plt.xlabel('Epoch')
+            plt.ylabel('Batch Agv Loss')
+            plt.title('Loss over Epochs')
+            plt.show()
+
+        return self.pqc
+    
+    def save(self):
+        pass
+
+    # MUST BE IN TQVENV
+    def plot_training_results(self, trained_pqc):
+
+        from sklearn.neighbors import KernelDensity
+        from utils.eigenvector_conversion import evenly_space_eigenstates 
+        from scipy.stats import norm
+        from qiskit.visualization import plot_histogram
+
+        # measure with torchquantum simulator
+        measurements = trained_pqc.sample_from_model(1000)
+        data = measurements[0]
+
+        # create axes
+        _, ax1 = plt.subplots()
+        x_values = np.linspace(self.y_range[0], self.y_range[1], 1000)
+        ax2 = ax1.twinx()
+        
+        # plot histogram of measured states
+        plot_histogram(data)
+        states = [evenly_space_eigenstates(bitstring, self.n_qubits, self.y_range[0], self.y_range[1]) for bitstring in data.keys()]
+        state_frequencies = list(data.values())
+        
+        ax1.bar(states, state_frequencies, label='Histogram of Measurements')
+
+        # plot kernel density estimation of measured states
+        expanded_data = []
+        for key, freq in data.items():
+            value = evenly_space_eigenstates(key, self.n_qubits, self.y_range[0], self.y_range[1])
+            expanded_data.extend([value] * freq)
+        expanded_data = np.array(expanded_data).reshape(-1, 1)
+        kde = KernelDensity(kernel='gaussian', bandwidth=1).fit(np.array(expanded_data).reshape(-1, 1))
+        kde_values = np.exp(kde.score_samples(x_values.reshape(-1, 1)))
+        ax2.plot(x_values, kde_values, color="r", label="KDE of Measurements")
+
+        true_distribution = create_distribution(self.config['data'])
+        x_points = np.linspace(self.y_range[0], self.y_range[1], 1000)
+        y_points = [true_distribution._pdf(x_point) for x_point in x_points]
+        ax2.plot(x_points, y_points, color='black', label='True distribution')
+
+        eigenvalues = evenly_space_eigenstates(torch.arange(start=0, end= 2**self.n_qubits, step=1), self.n_qubits, self.y_range[0], self.y_range[1])
+        exp_val = trained_pqc.calculate_expected_value(eigenvalues).item()
+        ax2.axvline(x=exp_val, color='r', linestyle='--', label=f'expected_value = {exp_val}')
+
+        plt.show()
+
+
+    # MUST BE IN TQVENV
+    def plot_training_results_reg2(self, trained_pqc):
+        
+        from distributions.heteroscedastic import HeteroscedasticData
+        
+        # measure with torchquantum simulator
+        x_points = np.linspace(self.x_range[0], self.x_range[1], 300)    
+        samples = trained_pqc.sample_from_model(torch.from_numpy(x_points))
+
+        # create axes
+        _, ax1 = plt.subplots()
+        x_positive = np.linspace(self.x_range[0], self.x_range[1], 500)
+        
+        # plot histogram of measured states
+        ax1.scatter(x_points, samples, label='Scatter of Measurements')
+
+        # plot true curve
+        dist = HeteroscedasticData([self.x_range[0], self.x_range[1]])
+        true_x_samples, true_y_samples = dist.rvs(size=500)
+        ax1.scatter(true_x_samples, true_y_samples, color="green")   
+        
+        continuous_y2 = dist.component_mean(x_positive)
+        ax1.plot(x_positive, continuous_y2, color='g', label="True Distribution")
+
+        plt.show()
+
+    def plot_training_results_reg1(self, trained_pqc):
+
+        # measure with torchquantum simulator
+        x_points = np.linspace(self.x_range[0], self.x_range[1], 300)    
+        samples = trained_pqc.sample_from_model(torch.from_numpy(x_points))
+
+        # create axes
+        fig, ax1 = plt.subplots()
+        continuous_x = np.linspace(self.x_range[0], self.x_range[1], 1000)
+        
+        # plot histogram of measured states
+        ax1.scatter(x_points, samples, label='Scatter of Measurements')
+
+        # plot true curve
+        continuous_y = 0.5*np.sin(0.8*continuous_x) + 0.05*continuous_x
+        ax1.plot(continuous_x, continuous_y, color='g', label="True Distribution")
+        ax1.plot(continuous_x, -continuous_y, color='g', label="True Distribution")
+
+        plt.show()
+
+def plot_training_results_classification(self, trained_pqc):
+
+    distribution = create_distribution("classification")
+    features, true_labels = distribution.generate_data()
+    
+    predicted_labels = trained_pqc.sample_from_model(features)
+
+    # Convert to numpy arrays for convenience
+    true_labels = np.array(true_labels)
+    predicted_labels = np.array(predicted_labels)
+
+    accuracy = accuracy_score(true_labels, predicted_labels)
+    cm = confusion_matrix(true_labels, predicted_labels)
+
+    print(f"Classification Accuracy: {accuracy * 100:.2f}%")
+    print("Confusion Matrix:")
+    print(cm)
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+    ax = axes[0]
+    im = ax.imshow(cm, cmap='Blues')
+    ax.set_title("Confusion Matrix")
+    ax.set_xlabel("Predicted Label")
+    ax.set_ylabel("True Label")
+
+    num_classes = cm.shape[0]
+    for i in range(num_classes):
+        for j in range(num_classes):
+            ax.text(
+                j, i, str(cm[i, j]),
+                ha="center", va="center",
+                color="red", fontsize=10
+            )
+    fig.colorbar(im, ax=ax)
+
+    ax2 = axes[1]
+    ax2.scatter(true_labels, predicted_labels, alpha=0.6)
+    ax2.set_title("Predicted vs. True Labels")
+    ax2.set_xlabel("True Labels")
+    ax2.set_ylabel("Predicted Labels")
+    min_lab = min(true_labels.min(), predicted_labels.min())
+    max_lab = max(true_labels.max(), predicted_labels.max())
+    ax2.plot([min_lab, max_lab], [min_lab, max_lab], 'r--', lw=2)
+
+    fig.suptitle(f"Classification Results\nAccuracy = {accuracy*100:.2f}%")
+    plt.tight_layout()
+    plt.show()

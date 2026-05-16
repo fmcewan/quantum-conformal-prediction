@@ -1,0 +1,20 @@
+experiment_name: supervisedModelTrainer
+data:
+  type: function
+  distribution: sinusoidal
+  x_range: [-10, 10]
+  y_range: [-1.5, 1.5]
+
+model:
+  type: supervised
+  layers: 5
+  wires: 5
+  ae_type: LNL
+
+training:
+  trainer: "regression"
+  learning_rate: 0.01
+  batch_size: 1000
+  epochs: 400
+  training_samples: 1000
+

@@ -1,0 +1,10 @@
+common_properties:
+  M: 500
+  model_name: combined_normals_bad 
+algorithm_profiles:
+  - name:  "aer"
+    hardware: "aer"
+  - name: "ibmq"
+    hardware: "ibmq"
+  - name: "ibmqM3"
+    hardware: "ibmqM3"

@@ -1,0 +1,15 @@
+common_properties:
+  validation_data_size: 100
+  calibration_data_size: 100 
+  M: 500
+  model_name: combined_normals_good
+  repeats: 1 
+algorithm_profiles:
+  - name: "aer_knn"
+    hardware: "aer"
+    score_function: "knn"
+  - name: "ibmq_knn"
+    hardware: "ibmq"
+    score_function: "knn"
+
+

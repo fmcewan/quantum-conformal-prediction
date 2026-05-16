@@ -1,0 +1,19 @@
+experiment_name: supervisedModelTrainer
+data:
+  type: function
+  distribution: heteroscedastic
+  x_range: [0.01, 10]
+  y_range: [-1.8, 1.8]
+
+model:
+  type: supervised
+  layers: 5
+  wires: 5
+  ae_type: LNL
+
+training:
+  trainer: "regression"
+  learning_rate: 0.01
+  batch_size: 800
+  epochs: 1
+  training_samples: 800

@@ -1,0 +1,16 @@
+name: combined_normals_density_estimation 
+data:
+  distribution: combined_normals
+  component_means: [-0.75, 0.75]
+  component_stds: [0.1, 0.1]
+  y_range: [-1.5, 1.5]
+model:
+  type: unsupervised
+  layers: 5
+  wires: 4
+training:
+  trainer: implicit_probabilistic
+  learning_rate: 0.01
+  batch_size: 100
+  epochs: 400
+  training_samples: 100

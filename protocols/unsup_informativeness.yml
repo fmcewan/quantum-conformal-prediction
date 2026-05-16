@@ -1,0 +1,15 @@
+common_properties:
+  validation_data_size: 100
+  calibration_data_size: 100 
+  alpha: 0.05
+  M: 500
+  repeats: 1 
+algorithm_profiles:
+  - name: "ibmq_knn_good"
+    model_name: "combined_normals_good"
+    hardware: "ibmq"
+    score_function: "knn"
+  - name: "ibmq_knn_bad"
+    model_name: "combined_normals_bad"
+    hardware: "ibmq"
+    score_function: "knn"

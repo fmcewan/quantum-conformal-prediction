@@ -1,0 +1,29 @@
+common_properties:
+  alpha: 0.1
+  calibration_data_size: 1000
+  M: 100
+algorithm_profiles:
+  - name: HDR KNN QCP
+    model_name: density_model_prob_strong
+    score_function: "knn_hdr"
+    hardware: "aer"
+
+  - name: deterministic CP 
+    model_name: density_model_det_strong
+    score_function: "det"
+    hardware: "aer"
+
+  - name: QCP, k=1
+    model_name: density_model_prob_strong 
+    score_function: "1nn"
+    hardware: "aer"
+
+  - name: QCP, k=$\lceil M^{1/2} \rceil$
+    model_name: density_model_prob_strong
+    score_function: "knn"
+    hardware: "aer"
+  
+  - name: HDR QCP
+    model_name: density_model_prob_strong
+    score_function: "hdr"
+    hardware: "aer"

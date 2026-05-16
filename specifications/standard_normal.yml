@@ -1,0 +1,18 @@
+name: standard_normal_trainer
+data:
+  distribution: combined_normals
+  component_means: [0]
+  component_stds: [1]
+  y_range: [-5, 5]
+
+model:
+  type: unsupervised
+  layers: 2
+  wires: 5
+
+training:
+  trainer: implicit_probabilistic
+  learning_rate: 0.01
+  batch_size: 33
+  epochs: 150
+  training_samples: 99

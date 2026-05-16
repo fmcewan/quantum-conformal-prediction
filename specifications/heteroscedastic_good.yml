@@ -1,0 +1,17 @@
+name: heteroscedastic_regression_good
+data:
+  distribution: heteroscedastic
+  type: function
+  x_range: [0.01, 10]
+  y_range: [-1.8, 1.8]
+model:
+  type: supervised
+  layers: 5
+  wires: 5
+  ae_type: LNL
+training:
+  trainer: regression
+  learning_rate: 0.01
+  batch_size: 64
+  epochs: 400 
+  training_samples: 1000

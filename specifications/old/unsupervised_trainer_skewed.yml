@@ -1,0 +1,20 @@
+experiment_name: unsupervisedModelTrainer
+data:
+  type: function
+  distribution: skewed_normal
+  mean: 0
+  loc: 1
+  skew: 2
+  y_range: [-4, 4]
+
+model:
+  type: unsupervised
+  layers: 2
+  wires: 5
+
+training:
+  trainer: implicit_probabilistic
+  learning_rate: 0.01
+  batch_size: 33
+  epochs: 150
+  training_samples: 100
