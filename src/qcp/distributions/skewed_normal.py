@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import skewnorm, rv_continuous
-from qcp.utilities.graphing_tricks import calculate_ranges
 
+from qcp.prediction.intervals import points_to_intervals
 
 class SkewedNormal(rv_continuous):
     """
@@ -45,7 +45,7 @@ class SkewedNormal(rv_continuous):
         """
         return skewnorm.rvs(self.skew, loc=self.loc, scale=self.scale, size=size, random_state=random_state)
 
-    def pdf_quantile_threshold(self, quantile):
+    def _pdf_quantile_threshold(self, quantile):
         """
         Find the PDF value threshold such that the total probability mass
         of points with a PDF value greater than or equal to the threshold
@@ -101,7 +101,7 @@ class SkewedNormal(rv_continuous):
 
         test_points = np.linspace(range[0], range[1], granularity)
         pdfs = self._pdf(test_points)
-        quantile_pdf = self.pdf_quantile_threshold(1 - mass)
+        quantile_pdf = self._pdf_quantile_threshold(1 - mass)
         true_quantile_set = test_points[pdfs > quantile_pdf]
 
-        return calculate_ranges(true_quantile_set, range[0], range[1], granularity)
+        return points_to_intervals(true_quantile_set, range[0], range[1], granularity)

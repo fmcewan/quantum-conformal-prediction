@@ -47,11 +47,11 @@ class CircuitManager:
 
         if self.hardware == "aer":
             self.data_binary = self.aer_data[job_id]
-            self.data = evenly_space_eigenstates(self.data_binary, self.num_qubits, self.y_range[0], self.y_range[1])
+            self.data = evenly_space_eigenstates(self.data_binary, self.qubits, self.y_range[0], self.y_range[1])
 
         elif self.hardware == "ibmq":
             self.data_binary = self.ibmq_data[job_id] 
-            self.data = evenly_space_eigenstates(self.data_binary, self.num_qubits, self.y_range[0], self.y_range[1])
+            self.data = evenly_space_eigenstates(self.data_binary, self.n_qubits, self.y_range[0], self.y_range[1])
 
         elif self.hardware == "ibmqM3":
             counts = self.ibmq_data[job_id] 
@@ -65,7 +65,7 @@ class CircuitManager:
             for bit_string in probabilities:
                 self.data_binary[bit_string] = round(M*probabilities[bit_string]) 
             
-            self.data = evenly_space_eigenstates(self.data_binary, self.num_qubits, self.y_range[0], self.y_range[1])
+            self.data = evenly_space_eigenstates(self.data_binary, self.n_qubits, self.y_range[0], self.y_range[1])
 
         else:
             raise ValueError(f"Unsupported hardware type: {self.hardware}")

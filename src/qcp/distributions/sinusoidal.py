@@ -2,11 +2,7 @@ import numpy as np
 from qcp.distributions.combined_normals import CombinedNormals
 from scipy.optimize import brentq
 
-class SinusoidalData():
-    """
-    Generates data with uniform x distribution and combined normal y distribution conditional on x.
-    """
-
+class Sinusoidal:
 
     def __init__(self, x_range):
         """
@@ -21,7 +17,7 @@ class SinusoidalData():
         """
         return 0.5 * np.sin(0.8 * x) + 0.05 * x
     
-    def component_std(x, self):
+    def component_std(self):
         return 0.05
 
     def pdf(self, y, x):

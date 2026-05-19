@@ -1,6 +1,5 @@
 # Standard library imports
 import argparse
-import sys
 
 def main():
 
@@ -44,30 +43,9 @@ def main():
 
     elif args.command == "collect":
         
-        from qcp.experiments import data_generation 
+        from qcp.collection import data_generation 
 
         data_generation.run_and_save_jobs(args.hardware, args.model, args.points, args.shots)
-
-    elif args.command == "experiment":
-        
-        from qcp.experiments import generate_results
-    
-        if hasattr(generate_results, args.name):
-            function = getattr(generate_results, args.name)
-            function(args.config, args.id)
-        else:
-            print(f"Error: Experiment '{args.name}' not found")
-            sys.exit(1)
-
-    elif args.command == "plot":
-        from visualisation import generate_figures
-        
-        if hasattr(generate_figures, args.name):
-            func = getattr(generate_figures, args.name)
-            func(args.id)
-        else:
-            print(f"Error: Plot '{args.name}' not found")
-            sys.exit(1)
 
 if __name__ == "__main__":
     main()

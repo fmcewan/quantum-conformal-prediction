@@ -1,15 +1,7 @@
-import pickle
 import torch
 import numpy as np
-import matplotlib.pyplot as plt  
-from scipy.stats import norm
 
-def evenly_space_eigenstates(input_data, num_qubits, min_val, max_val):
-    """
-    Converts eigenstates in either denary or in the computational basis to a value in the output range.
-    Evenly spaces eigenvectors across the range.
-    Supports single values, lists, and tensors of strings or integers.
-    """
+def eigenstate_to_value(input_data, num_qubits, min_val, max_val):
 
     N = 2 ** num_qubits
 
@@ -35,32 +27,14 @@ def evenly_space_eigenstates(input_data, num_qubits, min_val, max_val):
         raise TypeError(f"Unsupported input type: {type(input_data)}")
 
 
-def to_closest_eigenstate(values, n_qubits, min_val, max_val, base=2):
+def value_to_eigenstate(values, n_qubits, min_val, max_val):
+    
     statevectors = np.round((values - min_val) * (2**n_qubits - 1) / (max_val - min_val))
+    
     return statevectors
 
-def denary_eigenstate_to_binary_array(denary_number, n_bits):
+def eigenstate_to_bits(denary_number, n_bits):
+    
     binary_string = bin(denary_number)[2:].zfill(n_bits)
+    
     return [int(bit) for bit in binary_string]
-
-
-def plot_samples_and_distribution(training_data, calibration_data):
-    min_data_point = min(-1.5, min(training_data), min(calibration_data))
-    max_data_point = max(1.5, max(training_data), min(calibration_data))
-    x_values = np.linspace(min_data_point, max_data_point, 1000)
-
-    pdf_values = 0.5*(norm.pdf(x_values, loc=-0.75, scale=0.1) + norm.pdf(x_values, loc=0.75, scale=0.1))
-
-    plt.plot(x_values, pdf_values, color='g', label="PDF of Sum of Normals")
-
-    plt.plot(training_data.numpy(), np.zeros_like(training_data.numpy()), 'gx', label="Training Data")
-    plt.plot(calibration_data.numpy(), np.zeros_like(calibration_data.numpy()), 'o', markerfacecolor='none', color='blue',label="Calibration Data")
-
-    # Labels and legend
-    plt.xlabel('Value')
-    plt.ylabel('Density')
-    plt.title('Samples vs PDF of Distribution')
-    plt.legend()
-
-    # Show the plot
-    plt.show()

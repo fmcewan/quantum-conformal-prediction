@@ -480,7 +480,6 @@ def coverage_against_m(figure_id):
     plt.savefig(f"saved/figures/figure_{figure_id}/figure.pdf")
 
 def coverage_distribution_ideal(figure_id):
-    # Assumes an infinite validation set
 
     ns = [100,1000,10000]
     alpha = 0.1
@@ -523,7 +522,6 @@ def empirical_coverage_distribution_ideal(figure_id):
         nprime = nprimes[i]
         x = np.array(range(int(nprime*(0.75)),nprime))
         rv = betabinom(nprime,a, b)
-        # Renormalize the pmf to account for the larger number of points.
         ax.plot(x/nprime, rv.pmf(x) * nprime/nprimes[0], lw=3, label=r"$n_{\rm val}$" + f'={nprime}')
 
     ax.vlines(1-alpha,ymin=0,ymax=0.45,color='#888888',linestyles='dashed',label=r'$1-\alpha$')
@@ -597,3 +595,26 @@ def average_empirical_coverage_distribution(figure_id):
 
     # Display the plot
     plt.show()
+    
+def plot_samples_and_distribution(training_data, calibration_data):
+    
+    min_data_point = min(-1.5, min(training_data), min(calibration_data))
+    max_data_point = max(1.5, max(training_data), min(calibration_data))
+    x_values = np.linspace(min_data_point, max_data_point, 1000)
+
+    pdf_values = 0.5*(norm.pdf(x_values, loc=-0.75, scale=0.1) + norm.pdf(x_values, loc=0.75, scale=0.1))
+
+    plt.plot(x_values, pdf_values, color='g', label="PDF of Sum of Normals")
+
+    plt.plot(training_data.numpy(), np.zeros_like(training_data.numpy()), 'gx', label="Training Data")
+    plt.plot(calibration_data.numpy(), np.zeros_like(calibration_data.numpy()), 'o', markerfacecolor='none', color='blue',label="Calibration Data")
+
+    # Labels and legend
+    plt.xlabel('Value')
+    plt.ylabel('Density')
+    plt.title('Samples vs PDF of Distribution')
+    plt.legend()
+
+    # Show the plot
+    plt.show()
+

@@ -2,12 +2,7 @@ common_properties:
   calibration_data_size: 10
   validation_data_size: 10
   repeats: 100
-  M_list: 
-  - 50
-  - 100
-  - 500
-  - 1000
-  - 2500
+  M: 100
   alpha: 0.1
   model_name: standard_normal
   hardware: aer

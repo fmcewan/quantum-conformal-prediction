@@ -5,7 +5,7 @@ import numpy as np
 from scipy.stats import norm, rv_continuous
 
 # Local application imports
-from qcp.utilities.graphing_tricks import calculate_ranges
+from qcp.prediction.intervals import points_to_intervals
 
 class CombinedNormals(rv_continuous):
     
@@ -74,7 +74,7 @@ class CombinedNormals(rv_continuous):
         return np.random.normal(means, stds)
 
     
-    def pdf_quantile_threshold(self, quantile):
+    def _pdf_quantile_threshold(self, quantile):
         """
         Find the PDF value threshold such that the total probability mass of points 
         with a PDF value greater than or equal to the threshold equals the given quantile.
@@ -93,6 +93,7 @@ class CombinedNormals(rv_continuous):
         return sorted_pdf_vals[threshold_index]
     
     def get_hdr(self, mass, x_range=[-3, 3], granularity=1000):
+        
         """
         Find the high density regions (HDR) of the distribution for a specified mass.
 
@@ -104,8 +105,12 @@ class CombinedNormals(rv_continuous):
         Returns:
             list: A list of ranges representing the high density regions.
         """
+        
         test_points = np.linspace(x_range[0], x_range[1], granularity)
-        pdfs = self.pdf(test_points)
-        quantile_pdf = self.pdf_quantile_threshold(1 - mass)
+        
+        pdfs = self._pdf(test_points)
+        quantile_pdf = self._pdf_quantile_threshold(1 - mass)
+        
         true_quantile_set = test_points[pdfs > quantile_pdf]
-        return calculate_ranges(true_quantile_set, x_range[0], x_range[1], granularity)
+        
+        return points_to_intervals(true_quantile_set, x_range[0], x_range[1], granularity)
