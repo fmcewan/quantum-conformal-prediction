@@ -1,0 +1,19 @@
+[project]
+name = "qcp"
+version = "0.1.0"
+dependencies = [
+    "pyyaml",
+    "pennylane",
+    "pennylane-qiskit",
+    "qiskit-ibm-runtime",
+    "qiskit-aer",
+    "mthree",
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "scipy",
+    "scikit-learn",
+    "torch",]
+    
+[project.scripts]
+qcp = "qcp.main:main"

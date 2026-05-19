@@ -5,7 +5,7 @@ import sys
 def main():
 
     # Initialize the main parser
-    parser = argparse.ArgumentParser(description="Quantum Conformal Prediction (QCP) Pipeline Manager")
+    parser = argparse.ArgumentParser(description="Pipeline Manager")
     subparsers = parser.add_subparsers(dest="command", required=True, help="Available execution modes")
 
     # TRAIN: Train a quantum model
@@ -14,7 +14,7 @@ def main():
     train_parser.add_argument("save_name", type=str, help="Filename to save the trained model")
     train_parser.add_argument("--no-plot", action="store_true", help="Disable training loss plots")
 
-    # COLLECT: Run circuits to generate raw data
+    # DATA: Run circuits to generate raw data
     collect_parser = subparsers.add_parser("collect", help="Run circuits on backend to collect raw shots")
     collect_parser.add_argument("hardware", choices=["aer", "ibmq", "ibmqM3"], help="Target backend")
     collect_parser.add_argument("model", type=str, help="Model name")
@@ -35,19 +35,22 @@ def main():
     args = parser.parse_args()
 
     if args.command == "train":
-        from models.trainers import get_trainer 
+        from qcp.models.factory import get_trainer 
 
         trainer = get_trainer(args.config, args.save_name)
-        trainer.train(plot_loss=not args.no_plot)
+        
+        trainer.train()
         trainer.save()
 
     elif args.command == "collect":
-        from experiments import data_generation 
+        
+        from qcp.experiments import data_generation 
 
         data_generation.run_and_save_jobs(args.hardware, args.model, args.points, args.shots)
 
     elif args.command == "experiment":
-        from experiments import generate_results
+        
+        from qcp.experiments import generate_results
     
         if hasattr(generate_results, args.name):
             function = getattr(generate_results, args.name)

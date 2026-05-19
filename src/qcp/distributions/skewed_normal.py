@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.stats import skewnorm, rv_continuous
-from utils.graphing_tricks import calculate_ranges
+from qcp.utilities.graphing_tricks import calculate_ranges
 
 
 class SkewedNormal(rv_continuous):

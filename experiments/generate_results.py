@@ -3,15 +3,10 @@ import numpy as np
 import pandas as pd
 
 # File imports
-from conformal_prediction.cp_algorithm import CPAlgorithm 
-from conformal_prediction.qiskit_model import QiskitModel
-from utils.file_handling import load_yaml
-from distributions.dist_manager import create_distribution, event_probability
-from figures.utils import save_config_in_figure_folder, create_log_spaced_points
-
-# Third party imports
-import pandas as pd
-import numpy as np
+from qcp.prediction.conformal_predictor import ConformalPredictor 
+from qcp.models.circuits.circuit_manager import CircuitManager
+from qcp.utilities.file_handling import load_yaml
+from qcp.distributions.distribution_manager import create_distribution, event_probability
 
 def measurement_histograms(results_config_path, figure_id):
     """
@@ -24,7 +19,7 @@ def measurement_histograms(results_config_path, figure_id):
 
     # Load configuration for results
     results_config = load_yaml(f"configurations/results/{results_config_path}")
-    model = QiskitModel(results_config['common_properties']['model_name'], "aer")
+    model = CircuitManager(results_config['common_properties']['model_name'], "aer")
     M = results_config['common_properties']['M']
     
     # Create column names for the DataFrame
@@ -43,7 +38,7 @@ def measurement_histograms(results_config_path, figure_id):
     for algo_config in results_config['algorithm_profiles']:
         merged_config = results_config.get('common_properties') | algo_config 
         model.set_hardware(merged_config['hardware'])
-        job_id_file_path = f"saved/jobs/{merged_config['hardware']}_{merged_config['model_name']}_M{merged_config['M']}.csv"
+        job_id_file_path = f"data/jobs/{merged_config['hardware']}_{merged_config['model_name']}_M{merged_config['M']}.csv"
         data_df = pd.read_csv(job_id_file_path)
         example_job_id = str(data_df.iloc[0]['job_id'])
         model.extract_shots(example_job_id, M)
@@ -53,12 +48,9 @@ def measurement_histograms(results_config_path, figure_id):
         df[merged_config['name']] = df['eigenstates'].map(normalized_data).fillna(0).astype(float)
 
     # Save results and config file
-    output_path = f"saved/figures/figure_{figure_id}/results.csv"
+    output_path = f"data/figures/figure_{figure_id}/results.csv"
     df.to_csv(output_path, index=False)
     save_config_in_figure_folder(figure_id, results_config_path)
-
-def confusion_matrix(results_configuration_path, figure_id):
-    pass
 
 def unsupervised_prediction_sets(results_config_path, figure_id):
     """
@@ -68,12 +60,12 @@ def unsupervised_prediction_sets(results_config_path, figure_id):
     file includes a base algorithm with parameters such as calibration_data_size, M, job_id_file_name, and alpha,
     along with a list of algorithms. Each algorithm entry contains a name, model_name, hardware, and a scoring function.
     The method processes these configurations to generate prediction sets and computes coverage metrics for each algorithm.
-    The updated configuration, now augmented with additional fields for coverage and prediction sets, is saved to the folder
+    The updated configuration, now augmented with additional fields for coverage and prediction sets, is data to the folder
     specified by `figure_id`.
 
     Args:
         results_config_path (str): Path to the configuration file with algorithm specifications.
-        figure_id (str): Identifier for the folder where the updated configuration file with prediction sets will be saved.
+        figure_id (str): Identifier for the folder where the updated configuration file with prediction sets will be data.
 
     Returns:
         None
@@ -82,7 +74,7 @@ def unsupervised_prediction_sets(results_config_path, figure_id):
     # Load configurations
     results_config = load_yaml(f"configurations/results/{results_config_path}")
 
-    model_config_path = f"./saved/models/{results_config['common_properties']['model_name']}/config.yaml"
+    model_config_path = f"./data/models/{results_config['common_properties']['model_name']}/config.yaml"
     model_config = load_yaml(model_config_path)
     
     true_dist = create_distribution(model_config['data'])
@@ -93,7 +85,7 @@ def unsupervised_prediction_sets(results_config_path, figure_id):
         merged_config = results_config.get('common_properties') | algo_config 
 
         # Initialize Conformal Prediction algorithm
-        cp = CPAlgorithm(merged_config)
+        cp = ConformalPredictor(merged_config)
         cp.calibrate()
 
         # Generate prediction set
@@ -121,7 +113,7 @@ def set_size_and_coverage(results_configuration_path, figure_id):
     # Load configurations
     results_configuration = load_yaml(f"configurations/results/{results_configuration_path}")
     
-    model_configuration_path = f"./saved/models/{results_configuration['common_properties']['model_name']}/config.yaml"
+    model_configuration_path = f"./data/models/{results_configuration['common_properties']['model_name']}/config.yaml"
     model_configuration = load_yaml(model_configuration_path)
     
     # Create distribution and parameters
@@ -142,7 +134,7 @@ def set_size_and_coverage(results_configuration_path, figure_id):
             current_configuration = (results_configuration['common_properties'] | algorithm_configuration).copy()
             current_configuration['alpha'] = alpha
 
-            cp = CPAlgorithm(current_configuration)
+            cp = ConformalPredictor(current_configuration)
 
             # Initialize arrays for metrics
             total_set_size = 0
@@ -174,7 +166,7 @@ def set_size_and_coverage(results_configuration_path, figure_id):
                 })
 
     results_df = pd.DataFrame(all_results)
-    results_df.to_csv(f"saved/figures/figure_{figure_id}/results.csv", index=False)
+    results_df.to_csv(f"data/figures/figure_{figure_id}/results.csv", index=False)
     
     save_config_in_figure_folder(figure_id, results_configuration_path)
 
@@ -185,7 +177,7 @@ def unsupervised_informativeness(results_configuration_path, figure_id):
 
     Args:
         results_configuration_path (str): Path to the results config YAML file.
-        figure_id (str): Identifier for the folder where the output CSV will be saved.
+        figure_id (str): Identifier for the folder where the output CSV will be data.
     """
     # Load configurations
     results_configuration = load_yaml(f"configurations/results/{results_configuration_path}")
@@ -200,7 +192,7 @@ def unsupervised_informativeness(results_configuration_path, figure_id):
    
     # Retrieve the model configuration to ascertain the data that needs to be generate_prediction_set
 
-    model_configuration_path = f"./saved/models/{model_configuration_names[0]}/config.yaml"
+    model_configuration_path = f"./data/models/{model_configuration_names[0]}/config.yaml"
     model_configuration = load_yaml(model_configuration_path)
     
     # Retrieve the true distribution
@@ -228,7 +220,7 @@ def unsupervised_informativeness(results_configuration_path, figure_id):
 
         print(current_configuration['model_name'])
 
-        cp = CPAlgorithm(current_configuration)
+        cp = ConformalPredictor(current_configuration)
 
         repeat_avg_set_sizes = []
         # ----------------------------------------------------
@@ -258,7 +250,7 @@ def unsupervised_informativeness(results_configuration_path, figure_id):
 
     results_df = pd.DataFrame(all_results)
     print(results_df.head())
-    output_path = f"saved/figures/figure_{figure_id}/results.csv"
+    output_path = f"data/figures/figure_{figure_id}/results.csv"
     results_df.to_csv(output_path, index=False)
     
     save_config_in_figure_folder(figure_id, results_configuration_path)
@@ -272,11 +264,11 @@ def prediction_intervals(results_configuration_path, figure_id):
 
     Args:
         results_configuration_path (str): Path to the results config YAML file.
-        figure_id (str): Identifier for the folder where the output CSV will be saved.
+        figure_id (str): Identifier for the folder where the output CSV will be data.
     """
     # Load configurations
     results_configuration = load_yaml(f"configurations/results/{results_configuration_path}")
-    model_configuration_path = f"./saved/models/{results_configuration['common_properties']['model_name']}/config.yaml"
+    model_configuration_path = f"./data/models/{results_configuration['common_properties']['model_name']}/config.yaml"
     model_configuration = load_yaml(model_configuration_path)
 
     # --- This function only supports one algorithm profile at a time ---
@@ -290,7 +282,7 @@ def prediction_intervals(results_configuration_path, figure_id):
 
         current_configuration = results_configuration['common_properties'] | algorithm_configuration
 
-        cp = CPAlgorithm(current_configuration)
+        cp = ConformalPredictor(current_configuration)
 
         print("--- Calibrating Model ---")
         cp.calibrate()
@@ -336,7 +328,7 @@ def prediction_intervals(results_configuration_path, figure_id):
 
     # Create and save the final DataFrame
     results_df = pd.DataFrame(all_results)
-    output_path = f"saved/figures/figure_{figure_id}/results.csv"
+    output_path = f"data/figures/figure_{figure_id}/results.csv"
     results_df.to_csv(output_path, index=False)
 
 def supervised_informativeness(results_configuration_path, figure_id):
@@ -359,7 +351,7 @@ def supervised_informativeness(results_configuration_path, figure_id):
     current_configuration = (common_props | algo_config).copy()
     current_configuration['alpha'] = alpha
 
-    cp = CPAlgorithm(current_configuration)
+    cp = ConformalPredictor(current_configuration)
     
     # Store the average set size from each repeat to calculate std dev later
     repeat_avg_set_sizes = []
@@ -399,6 +391,6 @@ def supervised_informativeness(results_configuration_path, figure_id):
     results_df = pd.DataFrame(result_data)
     
     # Save with a unique name based on the config
-    output_path = f"saved/figures/figure_{figure_id}/results.csv"
+    output_path = f"data/figures/figure_{figure_id}/results.csv"
     results_df.to_csv(output_path, index=False)
-    print(f"Informativeness data saved to {output_path}")
+    print(f"Informativeness data data to {output_path}")

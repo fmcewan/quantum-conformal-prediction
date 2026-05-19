@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import norm, rv_continuous
 import torch
 import math
-from distributions.combined_normals import CombinedNormals
+from qcp.distributions.combined_normals import CombinedNormals
 from scipy.stats import norm
 
 class HeteroscedasticData():

@@ -11,7 +11,7 @@ model:
   wires: 5
 
 training:
-  trainer: implicit_probabilistic
+  trainer: unsupervised
   learning_rate: 0.01
   batch_size: 33
   epochs: 150

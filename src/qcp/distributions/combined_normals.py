@@ -5,7 +5,7 @@ import numpy as np
 from scipy.stats import norm, rv_continuous
 
 # Local application imports
-from utils.graphing_tricks import calculate_ranges
+from qcp.utilities.graphing_tricks import calculate_ranges
 
 class CombinedNormals(rv_continuous):
     

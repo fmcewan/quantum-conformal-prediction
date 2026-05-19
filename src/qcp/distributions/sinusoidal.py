@@ -1,7 +1,5 @@
 import numpy as np
-from scipy.stats import rv_continuous
-from distributions.combined_normals import CombinedNormals
-import torch
+from qcp.distributions.combined_normals import CombinedNormals
 from scipy.optimize import brentq
 
 class SinusoidalData():

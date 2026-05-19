@@ -4,48 +4,35 @@ import math
 # Third-party imports
 import numpy as np
 import pandas as pd
+
 from sklearn.neighbors import KernelDensity
 
-# Local application imports
-from conformal_prediction import scoring_functions
-from conformal_prediction.qiskit_model import QiskitModel
-from distributions.dist_manager import create_distribution
-from utils.file_handling import load_yaml
-from utils.graphing_tricks import calculate_ranges
+# Local imports
+from qcp.prediction.scoring_functions import * 
+
+from qcp.distributions.distribution_manager import create_distribution
+from qcp.models.circuits.circuit_manager import CircuitManager 
+
+from qcp.utilities.file_handling import load_yaml
+from qcp.utilities.graphing_tricks import calculate_ranges
 
 class ConformalPredictor:
 
-    def __init__(self, algorithm_configuration):
-        """
-        Initialize the CPAlgorithm with the given configuration.
-
-        This constructor loads configuration files, initializes the Qiskit model,
-        sets up necessary parameters and job data.
-
-        Parameters:
-            algorithm_configuration (dict): A dictionary containing configuration parameters.
-                Expected keys:
-                    - 'calibration_data_size': (int) Number of samples for calibration.
-                    - 'alpha': (float) Significance level for calibration.
-                    - 'score_function': (str) Identifier for the scoring function.
-                    - 'M': (int) Number of shots or samples.
-                    - 'model_name': (str) Name or identifier for the model.
-                    - 'job_id_file_name': (str) Filename for job ID CSV.
-                    - 'hardware' (str): Hardware configuration for the model.
-        """
-        print(f"\nInitialising algorithm\n{algorithm_configuration}")
+    def __init__(self, predictor_configuration):
+        
+        print(f"Initialising conformal prediction algorithm: {predictor_configuration}")
 
         # Extract configuration variables
-        self.calibration_data_size = algorithm_configuration['calibration_data_size']
-        self.alpha = algorithm_configuration['alpha']
-        self.score_function = algorithm_configuration['score_function']
-        self.M = algorithm_configuration['M']
-        self.model_name = algorithm_configuration['model_name']
+        self.calibration_data_size = predictor_configuration['calibration_data_size']
+        self.alpha = predictor_configuration['alpha']
+        self.score_function = predictor_configuration['score_function']
+        self.M = predictor_configuration['M']
+        self.model_name = predictor_configuration['model_name']
 
         # Initialize the model and distribution
-        self.model = QiskitModel(self.model_name, algorithm_configuration['hardware'])
+        self.model = CircuitManger(self.model_name, predictor_configuration['hardware'])
         training_configuration = load_yaml(f"./saved/models/{self.model_name}/config.yaml")
-        self.dist = create_distribution(training_configuration['data'])
+        self.distribution = create_distribution(training_configuration['data'])
 
         # Initialize additional parameters and job data
         self.k = math.ceil(math.sqrt(self.M))
@@ -54,15 +41,6 @@ class ConformalPredictor:
         self.jobs_df = pd.read_csv(self.job_id_file_path)
 
     def draw_from_jobs_df(self, chunk_size):
-        """
-        Retrieve a chunk of job data from the jobs DataFrame.
-
-        Parameters:
-            chunk_size (int): Number of rows to retrieve from the DataFrame.
-
-        Returns:
-            pandas.DataFrame: A slice of the jobs DataFrame corresponding to the specified chunk size.
-        """
         
         if self.start_idx + chunk_size > len(self.jobs_df):
             raise ValueError("Requested chunk exceeds DataFrame length.")
@@ -71,15 +49,6 @@ class ConformalPredictor:
         return chunk
     
     def calibrate(self):
-        """
-        Calibrate the algorithm by computing the threshold based on calibration data.
-
-        This method retrieves calibration data, computes scores for each sample, and
-        calculates a quantile-based threshold using the significance level (1-alpha).
-
-        Returns:
-            float: The computed threshold for generating prediction sets.
-        """
 
         calibration_data = self.draw_from_jobs_df(self.calibration_data_size)
         self.scores = [
@@ -91,22 +60,7 @@ class ConformalPredictor:
         return self.threshold
 
     def generate_prediction_set_naive(self, job_id, kernel_function="gaussian", bandwidth=0.1, n_samples=100):
-        """
-        Generate a prediction set using a Kernel Density Estimation (KDE).
 
-        This method extracts model shots for a given job, constructs a KDE over the data,
-        and returns the prediction set based on the top 1-alpha quantile. The method is denoted naive as 
-        it does not use a threshold chosen through conformal prediction.
-
-        Parameters:
-            job_id (str): Identifier for the job to extract model data.
-            kernel_function (str, optional): Kernel type for KDE. Defaults to "gaussian".
-            bandwidth (float, optional): Bandwidth parameter for KDE. Defaults to 0.1.
-            n_samples (int, optional): Number of samples to create the grid. Defaults to 100.
-
-        Returns:
-            list: A list of ranges representing the prediction set.
-        """
         self.model.extract_shots(job_id, self.M)
         model_samples_arr = []
         for value, frequency in self.model.data.items():
@@ -174,16 +128,7 @@ class ConformalPredictor:
         return prediction_set
 
     def score(self, y, job_id):
-        """
-        This method extracts model data for the given job and applies the selected scoring function.
 
-        Parameters:
-            y (float): The value at which to compute the score.
-            job_id (str): Identifier for the job to extract model shots data.
-
-        Returns:
-            float: The computed score.
-        """
         self.model.extract_shots(job_id, self.M)
         
         if self.score_function == "dis":
@@ -197,4 +142,4 @@ class ConformalPredictor:
         elif self.score_function == "hist":
             return scoring_functions.histogram(y, self.model.data, self.M, self.tau)
         else:
-            raise ValueError('There is no score function currently implemented by this name. Please choose det, 1nn, knn, mnn, hdr, or knn_hdr.')
+            raise NotImplementedError

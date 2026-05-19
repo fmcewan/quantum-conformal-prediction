@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project-specific .gitignore
+/virtual_environments
+/data
+/.vscode
+/.ipynb_checkpoints
+*.pyc
+*.csv
+

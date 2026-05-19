@@ -2,8 +2,10 @@ import torch
 import os
 import yaml
 
-from models.encodings.angle_encodings import LearnedLinear, LearnedNonLinear, Conventional
-from models.encodings.angle_encodings_classification import LearnedLinear as LearnedLinearC, LearnedNonLinear as LearnedNonLinearC
+from qcp.models.encoders.angle_encoder import LearnedLinear, LearnedNonLinear, Conventional
+
+from qiskit_aer import AerSimulator
+from qiskit.transpiler import generate_preset_pass_manager
 
 def load_angle_encoder(name):
     
@@ -61,34 +63,37 @@ def save_angle_encoder(pqc, model_name, config):
     
     print(f"Config file saved at: {config_dst}")
 
-def save_qiskit_pqc(qiskit_circuit, model_name, config):
-    from qiskit import qpy
-
-    save_directory = f'./saved/models/{model_name}/'
+def save_pqc(parameters, model_name, configuration):
+    
+    save_directory = f'./data/models/{model_name}/'
     os.makedirs(save_directory, exist_ok=True)
-    model_path = os.path.join(save_directory, 'model.qpy')
-    config_dst = os.path.join(save_directory, 'config.yaml')
     
-    with open(model_path, 'wb') as file:
-        qpy.dump(qiskit_circuit, file)
+    model_path = os.path.join(save_directory, 'model.pt')
+    configuration_path = os.path.join(save_directory, 'config.yaml')
     
-    print(f"Model saved at: {model_path}")
+    torch.save(parameters, model_path)
+    print(f"PQC model saved at: {model_path}")
     
-    with open(config_dst, 'w') as file:
-        yaml.dump(config, file)
+    with open(configuration_path, 'w') as file:
+        yaml.dump(configuration, file)
     
-    print(f"Config file saved at: {config_dst}")
+    print(f"PQC configuration saved at: {configuration_path}")
 
-def load_qiskit_pqc(folder_name):
-    """
-    retrieve and return trained qiskit circuit reverse the bits (to match torchquantum implementation)
-    """
-    from qiskit import qpy
-    with open("./saved/models/" + folder_name + "/model.qpy", 'rb') as handle:
-        qc = qpy.load(handle)[0]
-        qc = qc.reverse_bits()
-            
-    return qc
+def load_pqc(model_name):
+    
+    model_path = f'./data/models/{model_name}/model.pt'
+    
+    return torch.load(model_path)
+
+def load_model(model_name):
+    
+    model_path = f'./data/models/{model_name}/model.pt'
+    config_path = f'./data/models/{model_name}/config.yaml'
+    
+    params = torch.load(model_path)
+    configuration = load_yaml(config_path)
+    
+    return params, configuration
 
 def load_yaml(location):
     # Attempt to load existing config; if file not found, use an empty dict.
@@ -102,44 +107,22 @@ def load_yaml(location):
     return data
 
 # Loads and transpiles a parameterized quantum circuit 
-def load_circuit(name, hardware, model_type, model_config):
-    """
-    Load and transpile a parameterized quantum circuit based on a model type.
-
-    Returns:
-        tuple: A tuple containing the transpiled circuit and the angle encoder (if applicable).
-    """
+def load_circuit(name, model_type, model_configuration):
     
-    # Initialise backend and pass manager
-    if hardware == 'aer':
-        backend = AerSimulator(method="statevector")
-    else:
-        backend = FakeQuitoV2()
+    parameters = load_pqc(name)
     
-    pass_manager = generate_preset_pass_manager(3, backend=backend, seed_transpiler=0)
-    
-    # Load and transpile circuit
     if model_type == 'unsupervised':
-        circuit = load_qiskit_pqc(name)
-        circuit.measure_all()
         
-        transpiled_circuit = pass_manager.run(circuit)
+        from qcp.models.circuits.unsupervised_circuit import UnsupervisedCircuit
         
-        return transpiled_circuit, None
+        circuit = UnsupervisedCircuit(
+            n_qubits=model_configuration['wires'],
+            n_layers=model_configuration['layers']
+        )
+        circuit.parameters = torch.nn.Parameter(parameters)
+        
+        return circuit, None
     
     elif model_type == 'supervised':
-        angle_encoder = load_angle_encoder(name)
         
-        two_local = TwoLocal(
-            model_config['wires'], ['rz','ry','rz'], 'cz', 'linear', 
-            reps=model_config['layers']-1, insert_barriers=True
-        )
-        
-        circuit = QuantumCircuit(model_config['wires'])
-        circuit &= two_local
-        circuit = circuit.reverse_bits()
-        circuit.measure_all()
-
-        transpiled_circuit = pass_manager.run(circuit)
-        
-        return transpiled_circuit, angle_encoder
+        raise NotImplementedError
