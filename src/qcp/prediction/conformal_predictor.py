@@ -11,8 +11,8 @@ from qcp.prediction.scoring_functions import (
 
 from qcp.distributions.distribution_manager import create_distribution
 from qcp.models.circuits.circuit_manager import CircuitManager
+from qcp.prediction.intervals import points_to_intervals
 from qcp.utilities.file_handling import load_yaml
-from qcp.utilities.graphing_tricks import calculate_ranges
 
 class ConformalPredictor:
 
@@ -86,7 +86,7 @@ class ConformalPredictor:
             test_scores = np.array([self.score(y) for y in test_y_points])
             prediction_set = test_y_points[test_scores <= self.threshold]
 
-        return calculate_ranges(prediction_set, self.model.y_range[0], self.model.y_range[1], n_samples)
+        return points_to_intervals(prediction_set, self.model.y_range[0], self.model.y_range[1], n_samples)
 
     def score(self, y):
     

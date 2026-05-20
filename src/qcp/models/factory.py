@@ -1,19 +1,65 @@
 from qcp.utilities.file_handling import load_yaml 
 
 from qcp.models.trainers.unsupervised_trainer import UnsupervisedTrainer
+from qcp.models.trainers.regression_trainer import RegressionTrainer
+from qcp.models.trainers.classification_trainer import ClassificationTrainer
 
 def get_trainer(configuration, save_name):
 
     configuration_data = load_yaml(f"specifications/{configuration}")
+    print(configuration_data)
     trainer_type = configuration_data['training']['trainer']
     
-    if trainer_type == "unsupervised":
-        return UnsupervisedTrainer(configuration_data, save_name)
-    elif trainer_type == "supervised":
-        from qcp.models.trainers.regression import RegressionTrainer
-        return RegressionTrainer(configuration_data, save_name)
-    elif trainer_type == "classification":
-        from qcp.models.trainers.classification import ClassificationTrainer
-        return ClassificationTrainer(config_data, save_name)
-    else:
-        raise ValueError(f"Unknown trainer type: {trainer_type}")
+    match trainer_type:
+        case "unsupervised":
+            return UnsupervisedTrainer(configuration_data, save_name)
+        case "regression":
+            return RegressionTrainer(configuration_data, save_name)
+        case "classification":
+            return ClassificationTrainer(configuration_data, save_name)
+        case _:
+            raise ValueError(f"Unknown trainer type: {trainer_type}") 
+
+def get_circuit(name, model_type, model_configuration):
+    
+    parameters = load_pqc(name)
+
+    match model_type:
+
+        case 'unsupervised':
+            
+            circuit = UnsupervisedCircuit(
+                n_qubits=model_configuration['wires'],
+                n_layers=model_configuration['layers']
+            )
+            circuit.parameters = torch.nn.Parameter(parameters)
+            
+            return circuit, None
+
+        case 'supervised':
+            configuration = load_yaml(f'./data/models/{name}/config.yaml')
+            
+            circuit = RegressionCircuit(
+                n_qubits=model_configuration['wires'],
+                n_layers=model_configuration['layers'],
+                angle_encoder_type=model_configuration['ae_type'],
+                y_range=configuration['data']['y_range']
+            )
+            circuit.angle_encoder.load_state_dict(parameters)
+            
+            return circuit, circuit.angle_encoder
+
+        case 'classification':
+            configuration = load_yaml(f'./data/models/{name}/config.yaml')
+            input_dim = 2 * configuration['data']['dimension'] ** 2
+            
+            circuit = ClassificationCircuit(
+                n_qubits=model_configuration['wires'],
+                n_layers=model_configuration['layers'],
+                angle_encoder_type=model_configuration['ae_type'],
+                input_dim=input_dim
+            )
+            
+            circuit.angle_encoder.load_state_dict(parameters)
+            
+            return circuit, circuit.angle_encoder

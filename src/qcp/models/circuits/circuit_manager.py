@@ -10,7 +10,7 @@ from qiskit_ibm_runtime.fake_provider import FakeQuitoV2
 
 # Local module imports
 from qcp.utilities.file_handling import load_yaml, load_circuit
-from qcp.utilities.eigenvector_conversion import evenly_space_eigenstates
+from qcp.utilities.eigenvector_conversion import eigenstate_to_value
 
 AER_SAVE_DIRECTORY = "./data/jobs/aer_counts.yml" 
 
@@ -25,7 +25,7 @@ class CircuitManager:
         self.hardware = hardware
         self.type = self.training_configuration['model']['type']     
         self.y_range = self.training_configuration['data']['y_range']
-        self.qubits = self.training_configuration['model']['wires']
+        self.n_qubits = self.training_configuration['model']['wires']
 
         self.circuit, self.angle_encoder = load_circuit(self.name, self.type, self.model_configuration)
         
@@ -47,25 +47,25 @@ class CircuitManager:
 
         if self.hardware == "aer":
             self.data_binary = self.aer_data[job_id]
-            self.data = evenly_space_eigenstates(self.data_binary, self.qubits, self.y_range[0], self.y_range[1])
+            self.data = eigenstate_to_value(self.data_binary, self.n_qubits, self.y_range[0], self.y_range[1])
 
         elif self.hardware == "ibmq":
             self.data_binary = self.ibmq_data[job_id] 
-            self.data = evenly_space_eigenstates(self.data_binary, self.n_qubits, self.y_range[0], self.y_range[1])
+            self.data = eigenstate_to_value(self.data_binary, self.n_qubits, self.y_range[0], self.y_range[1])
 
         elif self.hardware == "ibmqM3":
             counts = self.ibmq_data[job_id] 
             
             mit = mthree.M3Mitigation(backend)
-            mit.cals_from_system(range(self.num_qubits))
-            m3_quasis = mit.apply_correction(counts, range(self.num_qubits))
+            mit.cals_from_system(range(self.n_qubits))
+            m3_quasis = mit.apply_correction(counts, range(self.n_qubits))
             probabilities = m3_quasis.nearest_probability_distribution()
 
             self.data_binary = {}
             for bit_string in probabilities:
                 self.data_binary[bit_string] = round(M*probabilities[bit_string]) 
             
-            self.data = evenly_space_eigenstates(self.data_binary, self.n_qubits, self.y_range[0], self.y_range[1])
+            self.data = eigenstate_to_value(self.data_binary, self.n_qubits, self.y_range[0], self.y_range[1])
 
         else:
             raise ValueError(f"Unsupported hardware type: {self.hardware}")

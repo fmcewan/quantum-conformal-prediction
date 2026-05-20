@@ -1,17 +1,18 @@
-name: sinusoidal_regression
+name: sinusoidal_trainer
 data:
   distribution: sinusoidal
-  type: function
-  x_range: [-10, 10]
-  y_range: [-1.5,1.5]
+  x_range: [-5, 5]
+  y_range: [-1, 1]
+
 model:
-  type: supervised 
-  layers: 5
+  type: supervised
+  layers: 2
   wires: 5
-  ae_type: LNL
+  ae_type: LL
+
 training:
   trainer: regression
   learning_rate: 0.01
-  batch_size: 500
-  epochs: 100
-  training_samples: 500
+  batch_size: 33
+  epochs: 150
+  training_samples: 99

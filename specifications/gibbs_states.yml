@@ -1,21 +1,22 @@
-experiment_name: classification_gibbs_STATES
+name: gibbs_states_trainer
 data:
-  num_classes: 10
+  distribution: classification
+  num_classes: 4
   num_features: 100
-  dimension: 16
-  temperature: 0.2
-  density: 0.4
-  y_range: 10
+  dimension: 2
+  density: 0.5
+  temperature: 1.0
+  y_range: [0, 3]
 
 model:
   type: classification
-  layers: 5
+  layers: 2
   wires: 5
   ae_type: LL
 
 training:
-  trainer: "classification"
+  trainer: classification
   learning_rate: 0.01
-  batch_size: 1000
-  epochs: 400
-  training_samples: 1000
+  batch_size: 4
+  epochs: 150
+  training_samples: 100

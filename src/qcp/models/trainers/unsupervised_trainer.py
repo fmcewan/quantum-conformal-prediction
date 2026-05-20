@@ -9,7 +9,7 @@ from qcp.models.trainers.base_trainer import BaseTrainer
 from qcp.models.circuits.unsupervised_circuit import UnsupervisedCircuit
 
 from qcp.utilities.metrics import NegativeLogSumCriterion
-from qcp.utilities.eigenvector_conversion import to_closest_eigenstate 
+from qcp.utilities.eigenvector_conversion import value_to_eigenstate
 from qcp.utilities.file_handling import save_pqc 
 
 class UnsupervisedTrainer(BaseTrainer):
@@ -19,7 +19,7 @@ class UnsupervisedTrainer(BaseTrainer):
         super().__init__(configuration, file_path)
 
         self.pqc = UnsupervisedCircuit(n_qubits=self.n_qubits, n_layers=self.n_layers)
-        train_y = to_closest_eigenstate(from_numpy(self.distribution.rvs(size=self.n_training_samples)), self.n_qubits, self.y_range[0], self.y_range[1])
+        train_y = value_to_eigenstate(from_numpy(self.distribution.rvs(size=self.n_training_samples)), self.n_qubits, self.y_range[0], self.y_range[1])
         self.dataset = TensorDataset(train_y)
         self.optimizer = optim.Adam([self.pqc.parameters], lr=self.learning_rate)
         self.criterion = NegativeLogSumCriterion()

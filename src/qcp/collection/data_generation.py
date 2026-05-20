@@ -85,6 +85,8 @@ def unsupervised_ibmq_jobs(model, backend, n_jobs, M):
 
 def supervised_aer_jobs(model, x_points, M):
 
+    os.makedirs("./data/jobs", exist_ok=True)
+
     try:
         with open(AER_SAVE_DIRECTORY, 'r') as file:
             aer_data = yaml.safe_load(file)
@@ -93,21 +95,14 @@ def supervised_aer_jobs(model, x_points, M):
     if aer_data is None:
         aer_data = {}
 
-    simulator = AerSimulator(method='statevector')
-
-    bound_isa_pqcs = []
-    for x_point in x_points:
-        x_tensor = torch.FloatTensor([x_point]) 
-        angles = model.angle_encoder(x_tensor)
-        angles_np = angles.detach().numpy()
-        bound_isa_pqcs.append(model.circuit.assign_parameters(angles_np.flatten(), inplace=False))
-
     job_ids = []
-    for bound_isa_pqc in bound_isa_pqcs:
-        job = simulator.run(bound_isa_pqc, shots=M)
-        job_id = job.job_id()
+
+    for i, x_point in enumerate(x_points):
+        job_id = f"aer_{model.name}_{len(aer_data) + i}"
+        x_tensor = torch.FloatTensor([x_point])
+        counts = model.circuit.sample_from_model(x_tensor, n_shots=M)
         job_ids.append(job_id)
-        aer_data[job_id] = dict(job.result().get_counts())
+        aer_data[job_id] = counts
 
     with open(AER_SAVE_DIRECTORY, 'w') as file:
         yaml.dump(aer_data, file)
@@ -146,6 +141,8 @@ def supervised_ibmq_jobs(model, backend, x_points, M):
 
 def classification_aer_jobs(model, x_points, M):
 
+    os.makedirs("./data/jobs", exist_ok=True)
+
     try:
         with open(AER_SAVE_DIRECTORY, 'r') as file:
             aer_data = yaml.safe_load(file)
@@ -154,27 +151,14 @@ def classification_aer_jobs(model, x_points, M):
     if aer_data is None:
         aer_data = {}
 
-    simulator = AerSimulator(method='statevector')
-    
-    bound_isa_pqcs = []   
-    for x in x_points:
-        real_part = x.real.reshape(-1)
-        imag_part = x.imag.reshape(-1)
-        x = torch.cat((real_part, imag_part)).float().unsqueeze(0)
-        
-        angles = model.angle_encoder(x)
-        angles_np = angles.detach().numpy()
-        bound_isa_pqcs.append(model.circuit.assign_parameters(angles_np[0], inplace=False))
-
     job_ids = []
-    with Batch(backend=simulator):
-        for bound_isa_pqc in bound_isa_pqcs:
-            job = simulator.run(bound_isa_pqc, shots=M)
-            job_id = job.job_id()
-            job_ids.append(job_id)
-            aer_data[job_id] = dict(job.result().get_counts())
 
-    # Write the updated job data back to the YAML file.
+    for i, x in enumerate(x_points):
+        job_id = f"aer_{model.name}_{len(aer_data) + i}"
+        counts = model.circuit.sample_from_model(x.unsqueeze(0), n_shots=M)
+        job_ids.append(job_id)
+        aer_data[job_id] = counts
+
     with open(AER_SAVE_DIRECTORY, 'w') as file:
         yaml.dump(aer_data, file)
 
