@@ -35,11 +35,9 @@ class UnsupervisedCircuit:
         return probabilities[target_eigenvectors.to(torch.int64)]
 
     def calculate_expected_value(self, eigenvalues):
-        
-        # Prepare the quantum state without measurement
         probabilities = self.circuit(self.parameters)
 
-        return torch.dot(probabilities, eigenvalues)
+        return torch.dot(probabilities, eigenvalues.double())
 
     def sample_from_model(self, n_shots):
        

@@ -1,6 +1,9 @@
 import math
 import numpy as np
 import pandas as pd
+import json 
+import os 
+
 from sklearn.neighbors import KernelDensity
 
 from qcp.prediction.scoring_functions import (
@@ -26,13 +29,55 @@ class ConformalPredictor:
         self.model_name = predictor_configuration['model_name']
 
         self.model = CircuitManager(self.model_name, predictor_configuration['hardware'])
-        training_configuration = load_yaml(f"./data/models/{self.model_name}/config.yaml")
+        training_configuration = load_yaml(f"./data/models/{self.model_name}/configuration.yml")
         self.distribution = create_distribution(training_configuration['data'])
 
         self.k = math.ceil(math.sqrt(self.M))
         self.job_id_file_path = f"data/jobs/{self.model.hardware}_{self.model_name}_M{self.M}.csv"
         self.jobs_df = pd.read_csv(self.job_id_file_path)
 
+    def run(self, output_directory, algorithm_name, n_validation_points=None, n_samples=100):
+        """
+        Calibrate and generate prediction sets for all validation points,
+        saving raw results to a CSV for downstream experiment scripts.
+
+        Parameters:
+            output_dir: Directory to save raw_results.csv
+            algorithm_name: Name of the algorithm profile (for labelling)
+            n_validation_points: Number of validation points (defaults to remaining jobs after calibration)
+            n_samples: Grid resolution for prediction set generation
+        """
+        self.calibrate()
+
+        if n_validation_points is None:
+            n_validation_points = len(self.jobs_df) - self.calibration_data_size
+
+        validation_data = self.sample_jobs(n_validation_points)
+
+        rows = []
+        for y, job_id in zip(validation_data['y'], validation_data['job_id']):
+            self.model.extract_shots(job_id, self.M)
+            score = self.score(y)
+            prediction_set = self.generate_prediction_set(n_samples=n_samples, job_id=job_id)
+            rows.append({
+                'algorithm': algorithm_name,
+                'job_id': job_id,
+                'y_true': y,
+                'score': score,
+                'threshold': self.threshold,
+                'alpha': self.alpha,
+                'prediction_set': json.dumps(prediction_set)
+            })
+        results_df = pd.DataFrame(rows)
+        
+        output_path = f"{output_directory}/results_{algorithm_name}.csv"
+        os.makedirs(output_directory, exist_ok=True)
+        results_df.to_csv(output_path, index=False)
+
+        print(f"Raw results saved to {output_path}.")
+
+        return results_df
+        
     def sample_jobs(self, n, replace=False):
 
         if n > len(self.jobs_df):
@@ -48,7 +93,7 @@ class ConformalPredictor:
             self.model.extract_shots(job_id, self.M)
             self.scores.append(self.score(y))
         
-        q_level = np.ceil((self.calibration_data_size + 1) * (1 - self.alpha)) / self.calibration_data_size
+        q_level = min(np.ceil((self.calibration_data_size + 1) * (1 - self.alpha)) / self.calibration_data_size, 1.0)
         self.threshold = np.quantile(self.scores, q_level, method='higher')
         
         return self.threshold    

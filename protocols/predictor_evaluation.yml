@@ -1,0 +1,14 @@
+name: predictor_evaluation
+model_name: standard_normal
+hardware: aer
+calibration_data_size: 10
+validation_data_size: 10
+repeats: 100
+M: 100
+alpha: 0.1
+
+algorithms:
+  - name: dis
+    score_function: dis
+  - name: knn
+    score_function: knn

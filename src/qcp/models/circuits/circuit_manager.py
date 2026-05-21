@@ -1,71 +1,78 @@
-# Standard library imports 
-import math as math
-import os 
-
-# Third-party imports
+import sqlite3
+import json
 import mthree
-import yaml
 
 from qiskit_ibm_runtime.fake_provider import FakeQuitoV2
 
-# Local module imports
-from qcp.utilities.file_handling import load_yaml, load_circuit
+from qcp.utilities.file_handling import load_yaml
+from qcp.models.factory import get_circuit
 from qcp.utilities.eigenvector_conversion import eigenstate_to_value
 
-AER_SAVE_DIRECTORY = "./data/jobs/aer_counts.yml" 
+DB_PATH = "./data/jobs/jobs.db"
 
 class CircuitManager:
 
     def __init__(self, name: str, hardware: str) -> None:
+        path = f'./data/models/{name}/configuration.yml'
 
-        self.training_configuration = load_yaml(f'./data/models/{name}/config.yaml')
+        self.training_configuration = load_yaml(path)
         self.model_configuration = self.training_configuration['model']
 
-        self.name = name 
+        self.name = name
         self.hardware = hardware
-        self.type = self.training_configuration['model']['type']     
+        self.type = self.training_configuration['model']['type']
         self.y_range = self.training_configuration['data']['y_range']
         self.n_qubits = self.training_configuration['model']['wires']
-
-        self.circuit, self.angle_encoder = load_circuit(self.name, self.type, self.model_configuration)
+        
+        self.circuit, self.angle_encoder = get_circuit(self.name, self.type, self.model_configuration)
         
         self.data = {}
         self.data_binary = {}
-           
-        if (hardware == "aer"):
-            with open(AER_SAVE_DIRECTORY, 'r') as aer_file:
-                self.aer_data = yaml.safe_load(aer_file)
-    
+
     def set_hardware(self, new_hardware: str) -> None:
-
         self.hardware = new_hardware
-        self.circuit, self.angle_encoder = load_circuit(self.name, new_hardware, self.type, self.model_configuration)
-    
-    def extract_shots(self, job_id: str, M: float) -> None:
+        self.circuit, self.angle_encoder = get_circuit(self.name, self.type, self.model_configuration)
 
-        backend = FakeQuitoV2()
+    def extract_shots(self, job_id: str, M: int) -> None:
+        match self.hardware:
+            case "aer":
+                self.data_binary = self._load_from_db(job_id)
+                self.data = eigenstate_to_value(
+                    self.data_binary, self.n_qubits, self.y_range[0], self.y_range[1]
+                )
 
-        if self.hardware == "aer":
-            self.data_binary = self.aer_data[job_id]
-            self.data = eigenstate_to_value(self.data_binary, self.n_qubits, self.y_range[0], self.y_range[1])
+            case "ibmq":
+                self.data_binary = self._load_from_db(job_id)
+                self.data = eigenstate_to_value(
+                    self.data_binary, self.n_qubits, self.y_range[0], self.y_range[1]
+                )
 
-        elif self.hardware == "ibmq":
-            self.data_binary = self.ibmq_data[job_id] 
-            self.data = eigenstate_to_value(self.data_binary, self.n_qubits, self.y_range[0], self.y_range[1])
+            case "ibmqM3":
+                counts = self._load_from_db(job_id)
+                backend = FakeQuitoV2()
+                mit = mthree.M3Mitigation(backend)
+                mit.cals_from_system(range(self.n_qubits))
+                m3_quasis = mit.apply_correction(counts, range(self.n_qubits))
+                probabilities = m3_quasis.nearest_probability_distribution()
+                self.data_binary = {
+                    bit_string: round(M * prob)
+                    for bit_string, prob in probabilities.items()
+                }
+                self.data = eigenstate_to_value(
+                    self.data_binary, self.n_qubits, self.y_range[0], self.y_range[1]
+                )
 
-        elif self.hardware == "ibmqM3":
-            counts = self.ibmq_data[job_id] 
-            
-            mit = mthree.M3Mitigation(backend)
-            mit.cals_from_system(range(self.n_qubits))
-            m3_quasis = mit.apply_correction(counts, range(self.n_qubits))
-            probabilities = m3_quasis.nearest_probability_distribution()
+            case _:
+                raise ValueError(f"Unsupported hardware type: {self.hardware}")
 
-            self.data_binary = {}
-            for bit_string in probabilities:
-                self.data_binary[bit_string] = round(M*probabilities[bit_string]) 
-            
-            self.data = eigenstate_to_value(self.data_binary, self.n_qubits, self.y_range[0], self.y_range[1])
+    def _load_from_db(self, job_id: str) -> dict:
+        conn = sqlite3.connect(DB_PATH)
+        row = conn.execute(
+            "SELECT counts FROM shots WHERE job_id = ?", (job_id,)
+        ).fetchone()
+        conn.close()
 
-        else:
-            raise ValueError(f"Unsupported hardware type: {self.hardware}")
+        if row is None:
+            raise KeyError(f"Job ID '{job_id}' not found in database.")
+
+        return json.loads(row[0])

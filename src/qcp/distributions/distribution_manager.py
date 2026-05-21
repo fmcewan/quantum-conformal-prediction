@@ -3,7 +3,7 @@ import numpy as np
 
 # Local application imports
 from qcp.distributions.combined_normals import CombinedNormals
-from qcp.distributions.heteroscedastic import HeteroscedasticData
+from qcp.distributions.heteroscedastic import Heteroscedastic
 from qcp.distributions.sinusoidal import Sinusoidal
 from qcp.distributions.skewed_normal import SkewedNormal
 from qcp.distributions.normal import Normal
@@ -19,7 +19,7 @@ def create_distribution(data_configuration):
         case "sinusoidal":
             return Sinusoidal(data_configuration["x_range"])
         case "heteroscedastic":
-            return HeteroscedasticData(data_configuration["x_range"])
+            return Heteroscedastic(data_configuration["x_range"])
         case "skewed_normal":
             return SkewedNormal(data_configuration["loc"], data_configuration["scale"], skew=data_configuration["skew"])
         case "classification":

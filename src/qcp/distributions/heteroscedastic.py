@@ -1,11 +1,8 @@
 import numpy as np
-from scipy.stats import norm, rv_continuous
-import torch
 import math
-from qcp.distributions.combined_normals import CombinedNormals
-from scipy.stats import norm
+from scipy.stats import norm 
 
-class HeteroscedasticData():
+class Heteroscedastic():
     """
     Generates heteroscedastic data with varying mean and standard deviation based on x.
     """
@@ -40,6 +37,7 @@ class HeteroscedasticData():
         component_mean = self.component_mean(x)
         component_std = self.component_std(x)
         dist = norm(loc=component_mean, scale=component_std)
+
         return dist.pdf(y)
 
     def cdf_given_x(self, y, x):
@@ -48,8 +46,9 @@ class HeteroscedasticData():
         """
         component_mean = self.component_mean(x)
         component_std = self.component_std(x)
-        dist = norm(loc=component_mean, scale=component_std)
-        return dist.cdf(y)
+        distribution = norm(loc=component_mean, scale=component_std)
+
+        return distribution.cdf(y)
     
     def rvs(self, size=1, random_state=None):
         """
@@ -61,7 +60,7 @@ class HeteroscedasticData():
         for i, x in enumerate(x_points):
             mean = self.component_mean(x)
             std = self.component_std(x)
-            y_points[i] = np.random.normal(loc=mean, scale=std, size=1)
+            y_points[i] = np.random.normal(loc=mean, scale=std)
 
         return x_points, y_points
 
@@ -70,4 +69,5 @@ class HeteroscedasticData():
         std = self.component_std(x)
         dist = norm(loc=mean, scale=std)
         lower_bound, upper_bound = dist.interval(percentage)
+
         return [[lower_bound, upper_bound]]

@@ -25,7 +25,7 @@ class Sinusoidal:
         Compute the PDF for y given x.
         """
         component_mean = self.component_mean(x)
-        component_std = self.component_std(x)
+        component_std = self.component_std()
         dist = CombinedNormals([-component_mean, component_mean], [component_std, component_std])
         return dist.pdf(y)
     
@@ -34,7 +34,7 @@ class Sinusoidal:
         Compute the CDF for y given x.
         """
         component_mean = self.component_mean(x)
-        component_std = self.component_std(x)
+        component_std = self.component_std()
         dist = CombinedNormals([-component_mean, component_mean], [component_std, component_std])
         return dist.cdf(y)
     
