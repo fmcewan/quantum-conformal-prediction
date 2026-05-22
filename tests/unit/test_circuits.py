@@ -223,21 +223,14 @@ def test_classification_sample_returns_dict(classification_circuit, complex_batc
     
     assert isinstance(counts, dict)
 
-def test_classification_sample_has_correct_number_of_jobs(classification_circuit, complex_batch):
+def test_classification_sample_correct_shots(classification_circuit, complex_batch):
     counts = classification_circuit.sample_from_model(complex_batch, n_shots=50)
-    
-    assert len(counts) == len(complex_batch)
 
-def test_classification_sample_correct_shots_per_job(classification_circuit, complex_batch):
-    counts = classification_circuit.sample_from_model(complex_batch, n_shots=50)
-    
-    for job_counts in counts.values():
-        assert sum(job_counts.values()) == 50
+    assert sum(counts.values()) == 50 * len(complex_batch)
 
 def test_classification_sample_valid_bitstrings(classification_circuit, complex_batch):
     counts = classification_circuit.sample_from_model(complex_batch, n_shots=50)
     
-    for job_counts in counts.values():
-        for bitstring in job_counts.keys():
-            assert len(bitstring) == classification_circuit.n_qubits
-            assert all(c in '01' for c in bitstring)
+    for bitstring in counts.keys():
+        assert len(bitstring) == classification_circuit.n_qubits
+        assert all(c in '01' for c in bitstring)

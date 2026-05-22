@@ -35,7 +35,7 @@ def mock_aer_data():
 def circuit_manager(unsupervised_configuration, mock_unsupervised_circuit, mock_aer_data):
     
     with patch('qcp.models.circuits.circuit_manager.load_yaml', return_value=unsupervised_configuration), \
-         patch('qcp.models.factory.get_circuit', return_value=(mock_unsupervised_circuit, None)):
+         patch('qcp.models.circuits.circuit_manager.get_circuit', return_value=(mock_unsupervised_circuit, None)):
         cm = CircuitManager('test_model', 'aer')
     
     return cm
@@ -92,7 +92,7 @@ def test_extract_shots_data_counts_preserved(circuit_manager, mock_aer_data):
 
 # set_hardware tests
 def test_set_hardware_updates_hardware(circuit_manager, mock_unsupervised_circuit):
-    with patch('qcp.models.factory.get_circuit', return_value=(mock_unsupervised_circuit, None)):
+    with patch('qcp.models.circuits.circuit_manager.get_circuit', return_value=(mock_unsupervised_circuit, None)):
         circuit_manager.set_hardware('ibmq')
     
     assert circuit_manager.hardware == 'ibmq'

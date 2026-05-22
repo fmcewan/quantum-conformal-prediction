@@ -34,12 +34,18 @@ class CircuitManager:
         self.circuit, self.angle_encoder = get_circuit(self.name, self.type, self.model_configuration)
 
     def extract_shots(self, job_id: str, M: int) -> None:
+
         match self.hardware:
             case "aer":
                 self.data_binary = self._load_from_db(job_id)
-                self.data = eigenstate_to_value(
-                    self.data_binary, self.n_qubits, self.y_range[0], self.y_range[1]
-                )
+
+                if self.type == "classification":
+                    self.data = {int(k, 2): v for k, v in self.data_binary.items()}
+
+                else:
+                    self.data = eigenstate_to_value(
+                        self.data_binary, self.n_qubits, self.y_range[0], self.y_range[1]
+                    ) 
 
             case "ibmq":
                 self.data_binary = self._load_from_db(job_id)

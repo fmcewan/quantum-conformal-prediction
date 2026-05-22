@@ -72,15 +72,13 @@ class ClassificationCircuit(nn.Module):
         angles_batch = self.angle_encoder(features)
         
         counts = {}
-        for i, angles in enumerate(angles_batch):
+        for angles in angles_batch:
             state = self.circuit(angles)
             probabilities = (state.abs() ** 2).detach().numpy()
             probabilities /= probabilities.sum()
             outcomes = np.random.choice(2 ** self.n_qubits, size=n_shots, p=probabilities)
-            job_id = f"sample_{i}"
-            counts[job_id] = {}
             for o in outcomes:
                 bit_string = format(o, f"0{self.n_qubits}b")
-                counts[job_id][bit_string] = counts[job_id].get(bit_string, 0) + 1
+                counts[bit_string] = counts.get(bit_string, 0) + 1
         
         return counts

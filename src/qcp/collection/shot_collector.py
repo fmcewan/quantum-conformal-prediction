@@ -138,6 +138,8 @@ def save_jobs(hardware, model_name, x_points, y_points, job_ids, M):
         writer = csv.writer(csvfile)
         writer.writerow(["x", "y", "job_id"])
         for x, y, job_id in zip(x_points, y_points, job_ids):
+            if hasattr(y, 'item'):
+                y = y.item()
             writer.writerow([x, y, job_id])
 
 
