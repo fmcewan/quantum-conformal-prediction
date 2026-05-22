@@ -15,7 +15,6 @@ def main():
     # TRAIN: Train a quantum model
     train_parser = subparsers.add_parser("train", help="Train a new quantum model")
     train_parser.add_argument("config", type=str, help="Specification name (e.g. standard_normal)")
-    train_parser.add_argument("save_name", type=str, help="Filename to save the trained model")
     train_parser.add_argument("--no-plot", action="store_true", help="Disable training loss plots")
 
     # COLLECT: Run circuits to generate raw data
@@ -32,7 +31,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == "train":
-        trainer = get_trainer(args.config, args.save_name)
+        trainer = get_trainer(args.config)
         
         trainer.train()
         trainer.save()

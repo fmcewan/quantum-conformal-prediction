@@ -60,13 +60,13 @@ def regression_configuration():
 # get_trainer() tests
 def test_get_trainer_unsupervised(unsupervised_configuration):
     with patch('qcp.models.factory.load_yaml', return_value=unsupervised_configuration):
-        trainer = get_trainer('standard_normal.yml', 'test_model')
+        trainer = get_trainer('standard_normal')
 
     assert isinstance(trainer, UnsupervisedTrainer)
 
 def test_get_trainer_regression(regression_configuration):
     with patch('qcp.models.factory.load_yaml', return_value=regression_configuration):
-        trainer = get_trainer('sinusoidal.yml', 'test_model')
+        trainer = get_trainer('sinusoidal')
 
     assert isinstance(trainer, RegressionTrainer)
 
@@ -75,7 +75,7 @@ def test_get_trainer_unknown_raises():
 
     with patch('qcp.models.factory.load_yaml', return_value=configuration):
         with pytest.raises(ValueError):
-            get_trainer('unknown.yml', 'test_model')
+            get_trainer('unknown')
 
 
 # CLI tests
@@ -84,7 +84,7 @@ def test_cli_train_command(tmp_path):
         mock_trainer = MagicMock()
         mock_get_trainer.return_value = mock_trainer
         
-        with patch('sys.argv', ['qcp', 'train', 'standard_normal.yml', 'test_model', '--no-plot']):
+        with patch('sys.argv', ['qcp', 'train', 'standard_normal']):
             main()
         
         mock_trainer.train.assert_called_once()

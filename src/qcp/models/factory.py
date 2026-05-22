@@ -10,18 +10,18 @@ from qcp.models.trainers.unsupervised_trainer import UnsupervisedTrainer
 from qcp.models.trainers.regression_trainer import RegressionTrainer
 from qcp.models.trainers.classification_trainer import ClassificationTrainer
 
-def get_trainer(configuration, save_name):
+def get_trainer(configuration_name):
 
-    configuration_data = load_yaml(f"specifications/{configuration}.yml")
+    configuration_data = load_yaml(f"specifications/{configuration_name}.yml")
     trainer_type = configuration_data['training']['trainer']
     
     match trainer_type:
         case "unsupervised":
-            return UnsupervisedTrainer(configuration_data, save_name)
+            return UnsupervisedTrainer(configuration_data, configuration_name)
         case "regression":
-            return RegressionTrainer(configuration_data, save_name)
+            return RegressionTrainer(configuration_data, configuration_name)
         case "classification":
-            return ClassificationTrainer(configuration_data, save_name)
+            return ClassificationTrainer(configuration_data, configuration_name)
         case _:
             raise ValueError(f"Unknown trainer type: {trainer_type}") 
 
