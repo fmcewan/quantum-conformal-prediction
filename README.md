@@ -1,6 +1,6 @@
-# qcp — Quantum Conformal Prediction
+# Quantum Conformal Prediction
 
-`qcp` is a Python framework for training parameterised quantum circuits (PQCs) and evaluating them using conformal prediction. It supports unsupervised, regression, and classification circuit architectures, and can run on a local Aer simulator or IBM Quantum hardware.
+QCP is a Python framework for training parameterised quantum circuits (PQCs) and evaluating them using conformal prediction. It supports unsupervised, regression, and classification circuit architectures, and can run on a local Aer simulator or IBM Quantum hardware.
 
 ## Overview
 
@@ -195,3 +195,10 @@ data/
 └── results/<protocol_name>/
     └── results_<algorithm>.csv
 ```
+
+## Contributions
+
+The original codebase for this project was completeled along with another student at the University of Manchester, Douglas Spencer.
+
+
+## Data Directory Layout
