@@ -198,4 +198,4 @@ data/
 
 ## Contributions
 
-The original codebase for this project was completeled along with another student at the University of Manchester, Douglas Spencer.
+Initial prototype work was completed collaboratively as part of a university group project with another University of Manchester student, Douglas Spencer. The current implementation and extensions are primarily my own work.
